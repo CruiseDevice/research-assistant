@@ -2,12 +2,9 @@
 
 A command-line **multi-agent research assistant** built with [LangGraph](https://github.com/langchain-ai/langgraph). Give it a research query or a factual claim, and three agents work in sequence to search the web, analyze the results, and write a concise Markdown report.
 
-```
-┌────────────┐     ┌────────────┐     ┌────────────┐
-│ Researcher │ ──▶ │  Analyst   │ ──▶ │   Writer   │ ──▶ 📄 Report
-│  (search)  │     │ (verify /  │     │ (markdown) │
-│            │     │  insights) │     │            │
-└────────────┘     └────────────┘     └────────────┘
+```mermaid
+flowchart LR
+    Researcher["Researcher<br/>(search)"] --> Analyst["Analyst<br/>(verify / insights)"] --> Writer["Writer<br/>(markdown)"] --> Report["📄 Report"]
 ```
 
 - **Researcher** — searches the web and returns structured findings with sources.
