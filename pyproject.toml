@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "langgraph-research-assistant"
+version = "0.1.0"
+description = "A command-line multi-agent research assistant built with LangGraph."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    # Workflow engine
+    "langgraph>=0.2.0",
+    # LLM abstraction layer
+    "langchain>=0.3.0",
+    # LLM providers
+    "langchain-anthropic>=0.2.0",
+    "langchain-openai>=0.2.0",
+    # Web search tool (standalone integration; replaces sunset langchain-community)
+    "langchain-tavily>=0.2.0",
+    # Config + utilities
+    "python-dotenv>=1.0.0",
+    "requests>=2.32.0",
+    "pydantic>=2.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+]
+
+[project.scripts]
+research = "src.main:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
