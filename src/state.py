@@ -9,6 +9,9 @@ class ResearchState(TypedDict, total=False):
     """TypedDict-style state passed between agents."""
 
     query: str
+    iteration: int
+    sufficient: bool
+    follow_up_query: str
     messages: Annotated[list, add_messages]
     search_results: str
     analysis: str

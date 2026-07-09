@@ -27,11 +27,23 @@ search_agent = create_react_agent(
 
 
 def search_node(state: ResearchState):
+    query = state.get("query", "")
+    follow_up_query = state.get("follow_up_query", "")
+    iteration = state.get("iteration", 0)
+    if follow_up_query:
+        content = follow_up_query
+        print(f"[search] round {iteration + 1} | follow-up: {follow_up_query}")
+    else:
+        content = query
+        print(f"[search] round {iteration + 1} | query: {query}")
     result = search_agent.invoke({
-        "messages": [HumanMessage(content=state["query"])]
+        "messages": [HumanMessage(content=content)]
     })
     final_message = result["messages"][-1]  # last AIMessage = the summary
+    previous = state.get("search_results", "")
+    new_results = final_message.content
+    accumulated = f"{previous}\n\n---\n\n## Round {iteration + 1}\n\n{new_results}" if previous else new_results
     return {
         "messages": result["messages"],
-        "search_results": final_message.content,
+        "search_results": accumulated,
     }
