@@ -1,15 +1,20 @@
 # LangGraph Research Assistant
 
-A command-line **multi-agent research assistant** built with [LangGraph](https://github.com/langchain-ai/langgraph). Give it a research query or a factual claim, and three agents work in sequence to search the web, analyze the results, and write a concise Markdown report.
+A command-line **multi-agent research assistant** built with [LangGraph](https://github.com/langchain-ai/langgraph). Give it a research query or a factual claim, and three agents — search → analyze → report — collaboratively research it, with the analyst able to loop the searcher back for follow-up queries before writing a concise Markdown report.
 
 ```mermaid
-flowchart LR
-    Researcher["Researcher<br/>(search)"] --> Analyst["Analyst<br/>(verify / insights)"] --> Writer["Writer<br/>(markdown)"] --> Report["📄 Report"]
+flowchart TD
+    Start([Start]) --> Search["search_agent<br/>(Tavily web search)"]
+    Search --> Analyze["analyze_agent<br/>(analysis + sufficiency check)"]
+    Analyze --> Route{"sufficient?<br/>or MAX_ITERATIONS reached?"}
+    Route -->|"not sufficient"| Search
+    Route -->|"sufficient / capped"| Report["report_agent<br/>(Markdown report)"]
+    Report --> End([End])
 ```
 
-- **Researcher** — searches the web and returns structured findings with sources.
-- **Analyst** — verifies the claim (TRUE / FALSE / MIXED) or extracts key insights.
-- **Writer** — turns the analysis into a concise Markdown report.
+- **search agent** — searches the web (Tavily) and summarizes the findings.
+- **analyze agent** — produces a structured analysis and judges whether the evidence is sufficient, or requests a follow-up search.
+- **report agent** — turns the analysis into a concise Markdown report.
 
 LangGraph provides explicit state management between steps, a clear graph visualization of the workflow, and an easy path to extension (loops, parallel nodes, memory).
 
@@ -115,23 +120,20 @@ print(settings.llm_provider, settings.llm_model)
 
 ## How it works
 
-The pipeline is a compiled LangGraph `StateGraph`. A shared `ResearchState` flows through three nodes; each node reads what it needs and returns a dict of state updates:
+The pipeline is a compiled LangGraph `StateGraph` exposed as the module-level `graph`. A shared `ResearchState` (keyed on `query`) flows through three nodes; the analyst can loop the searcher back for a follow-up, capped at `MAX_ITERATIONS` (=2) rounds:
 
-1. **`researcher`** — binds a [Tavily](https://tavily.com) search tool to the LLM, decides whether the input is a *query* or a *claim*, searches the web, and returns structured JSON:
+1. **`search_agent`** — a ReAct agent (`create_react_agent`) with a [Tavily](https://tavily.com) search tool bound; gathers web results and summarizes the key facts, titles, and source URLs. Results are accumulated across rounds, each tagged `## Round N`.
+2. **`analyze_agent`** — reads the accumulated results (treated as data inside `<search_results>` tags to limit prompt injection) and returns structured output:
    ```json
-   { "findings": ["..."], "sources": ["https://..."], "input_type": "research_query" }
+   { "analysis": "...", "sufficient": true, "follow_up_query": null }
    ```
-2. **`analyst`** — reads the findings. For a claim it returns a verdict (`TRUE` / `FALSE` / `MIXED`) and a source assessment; for a query it returns key insights:
-   ```json
-   { "input_type": "...", "insights": ["..."], "verdict": "TRUE", "source_assessment": "..." }
-   ```
-3. **`writer`** — turns the analysis into a Markdown report (≤ 500 words).
+3. **Routing** — if `sufficient` is `false` and the round count is under `MAX_ITERATIONS`, it loops back to `search_agent` with `follow_up_query`; otherwise it proceeds.
+4. **`report_agent`** — turns the analysis into a concise Markdown report.
 
 ```python
-from src.graph import build_research_graph
+from src.graph import graph
 
-graph = build_research_graph()
-result = graph.invoke({"user_input": "What are quantum computers?"})
+result = graph.invoke({"query": "What are quantum computers?"})
 print(result["report"])
 ```
 
@@ -155,7 +157,7 @@ The stack: **LangGraph** (workflow) · **LangChain** (LLM abstraction) · **lang
 
 Planned extensions (see `PLAN.md` Phase 7):
 
-- [ ] Feedback loop — Analyst can request the Researcher to search again
+- [x] Feedback loop — Analyst can request the Researcher to search again (done; `MAX_ITERATIONS=2`, see `src/graph.py`)
 - [ ] Parallel research — multiple Researcher nodes with different queries
 - [ ] Session memory — store reports in SQLite or a vector store
 - [ ] Guardrails — validate agent outputs with Pydantic schemas + retry
