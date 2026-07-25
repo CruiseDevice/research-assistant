@@ -47,6 +47,8 @@ class Settings(BaseSettings):
 
     # --- Search ---
     search_provider: str = Field(default="tavily")
+    # "parallel" (default): planner -> fan-out. "react": legacy ReAct summarizer (A/B fallback).
+    search_mode: str = Field(default="parallel")
     tavily_api_key: str = Field(default="")
 
 

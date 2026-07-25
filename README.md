@@ -107,6 +107,7 @@ LLM_MODEL=gpt-4o-mini research "What are quantum computers?"
 | `OPENAI_API_KEY` | *(empty)* | Required when `LLM_PROVIDER=openai` |
 | `ANTHROPIC_API_KEY` | *(empty)* | Required when `LLM_PROVIDER=anthropic` |
 | `SEARCH_PROVIDER` | `tavily` | Search backend |
+| `SEARCH_MODE` | `parallel` | `parallel` (planner + fan-out, default) or `react` (legacy ReAct summarizer) |
 | `TAVILY_API_KEY` | *(empty)* | Required for web search |
 
 Access settings from code:
