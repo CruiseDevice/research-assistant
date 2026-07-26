@@ -109,12 +109,36 @@ LLM_MODEL=gpt-4o-mini research "What are quantum computers?"
 | `SEARCH_PROVIDER` | `tavily` | Search backend |
 | `SEARCH_MODE` | `parallel` | `parallel` (planner + fan-out, default) or `react` (legacy ReAct summarizer) |
 | `TAVILY_API_KEY` | *(empty)* | Required for web search |
+| `SESSION_DB_PATH` | *(empty)* | SQLite session-log path. Empty uses `~/.langgraph-research-assistant/sessions.db` |
 
 Access settings from code:
 
 ```python
 from src.config import settings
 print(settings.llm_provider, settings.llm_model)
+```
+
+---
+
+## Usage
+
+Run a research query (one-shot or interactive):
+
+```bash
+research                              # interactive prompt
+research "who won the FIFA world cup in 2026?"   # one-shot
+research "..." --no-save              # run without logging the session
+```
+
+Each completed run is logged to a local SQLite database so you can recall past
+research sessions. Reading and managing the log needs no API keys:
+
+```bash
+research --history                    # list recent sessions (newest first)
+research --history --limit 50
+research --show 17                    # print a past session's report
+research --search "quantum"           # substring search over query/analysis/report
+research --delete 17                  # delete a session
 ```
 
 ---
@@ -151,24 +175,3 @@ pytest
 ```
 
 The stack: **LangGraph** (workflow) · **LangChain** (LLM abstraction) · **langchain-openai** / **langchain-anthropic** (providers) · **langchain-tavily** (search) · **pydantic-settings** (config).
-
----
-
-## Roadmap
-
-Planned extensions (see `PLAN.md` Phase 7):
-
-- [x] Feedback loop — Analyst can request the Researcher to search again (done; `MAX_ITERATIONS=2`, see `src/graph.py`)
-- [ ] Parallel research — multiple Researcher nodes with different queries
-- [ ] Session memory — store reports in SQLite or a vector store
-- [ ] Guardrails — validate agent outputs with Pydantic schemas + retry
-- [ ] Web UI — wrap `run_research()` in FastAPI or Streamlit
-- [ ] DuckDuckGo fallback — zero-API-key search option
-
----
-
-## Notes
-
-- **Secrets:** `.env` is gitignored. Never commit real API keys — store them in `.env` or the environment only.
-- **Search backend:** we use the standalone [`langchain-tavily`](https://pypi.org/project/langchain-tavily/) package. Do **not** install `langchain-community` or `tavily-python` separately.
-- See [`AGENTS.md`](./AGENTS.md) for the step-by-step build guide.

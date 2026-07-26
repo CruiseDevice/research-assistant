@@ -51,6 +51,11 @@ class Settings(BaseSettings):
     search_mode: str = Field(default="parallel")
     tavily_api_key: str = Field(default="")
 
+    # --- Session memory ---
+    # Path to the SQLite session log. Empty (default) uses
+    # ~/.langgraph-research-assistant/sessions.db (see src.storage).
+    session_db_path: str = Field(default="")
+
 
 # Single shared instance for the rest of the app to import.
 settings = Settings()
