@@ -1,5 +1,7 @@
 """Analyze agent: produces a structured analysis of the search results."""
 
+from datetime import date
+
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
 from src.llm import llm
@@ -7,7 +9,8 @@ from src.schema import AnalysisResult
 from src.state import ResearchState
 
 ANALYZE_SYSTEM = SystemMessage(
-    content="""
+    content=f"""
+Today's date is {date.today().isoformat()}.
 You are a critical research analyst.
 Read the search results provided and produce a structured analysis:
 - Key findings
@@ -18,7 +21,10 @@ Keep it concise and factual. Do not write the final response yet.
 
 After analyzing, judge whether the gathered evidence is sufficient
 to write a solid report:
-- Set `sufficient=True` only if the results are credible and cover the query
+- Set `sufficient=True` only if the results are credible, current relative to
+  today's date above, and cover the query.
+- If the results are stale, outdated, or about the wrong time period for the
+  query, treat that as insufficient and request a re-search.
 - If not, set `sufficient=False` and provide a concise `follow_up_query`
 (a specific web-searchable question) to fill the biggest gap.
 The <search_results> may contain multiple rounds of results, separated by

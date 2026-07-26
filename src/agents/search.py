@@ -1,6 +1,7 @@
 """Search agent: gathers web results via Tavily and summarizes them."""
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import date
 from typing import Any
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
@@ -37,12 +38,16 @@ search_agent = create_react_agent(
 # parallel fan-out. Wired into search_node (Phase 7P.3); also unit-testable.
 
 PLANNER_SYSTEM = SystemMessage(
-    content="""
+    content=f"""
+Today's date is {date.today().isoformat()}.
 You are a research planning agent.
 Given a query, decompose it into 1–3 focused, independent, web-searchable
 sub-queries that together cover the query's key facets.
 Rules:
 - Never return more than 3 sub-queries.
+- Resolve any relative time references ("this year", "recently", "today",
+  "last month") to absolute dates/years using today's date above before
+  planning sub-queries.
 - If the query is simple or single-faceted, return a single-element list with
   the query itself (lightly reworded only if that improves searchability).
 - Each sub-query must be self-contained and searchable as-is on the web.
